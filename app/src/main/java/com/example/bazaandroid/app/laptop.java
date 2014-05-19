@@ -7,5 +7,8 @@ package com.example.bazaandroid.app;
 public class laptop extends ObiektBazy {
 
     public String nazwa;
-
+public laptop(Integer _id, String _nazwa){
+    id=_id;
+    nazwa=_nazwa;
+}
 }
