@@ -13,6 +13,10 @@ public abstract class ObiektBazy {
      * Czy zmieniono od czasu pobrania z bazy
      */
     public boolean zmieniony=false;
+    /**
+     * Czy obiekt został dodany teraz na telefonie
+     */
+    public boolean dodany=false;
 
 
 }

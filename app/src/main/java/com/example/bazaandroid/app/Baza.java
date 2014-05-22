@@ -4,21 +4,27 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Dictionary;
-import java.util.Enumeration;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Hashtable;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 
 /**
- * Created by Administrator on 14.05.14.
+ * Created by Matrix0123456789 on 14.05.14.
+ * Jest to główna klasa odpowiedzialna za kontakt z serwerem. Wszystko jest statyczne.
  */
 public class Baza {
-    public static Dictionary<Integer, Czlowiek> ludzie=new Słownik<Integer, Czlowiek>();
-    public static Słownik<Integer, laptop> laptopy=new Słownik<Integer, laptop>();
-    public static Słownik<Integer, Wyp> wyporzyczenia=new Słownik<Integer, Wyp>();
+    public static Hashtable<Integer, Czlowiek> ludzie=new Hashtable<Integer, Czlowiek>();
+    public static Hashtable<Integer, laptop> laptopy=new Hashtable<Integer, laptop>();
+    public static Hashtable<Integer, Wyp> wyporzyczenia=new Hashtable<Integer, Wyp>();
 public static void czytaj(Document dok){
     NodeList laptopyXML=dok.getElementsByTagName("laptop");
     for(int i=0;i<laptopyXML.getLength();i++)
@@ -37,9 +43,14 @@ public static void czytaj(Document dok){
         wyporzyczenia.put(Integer.parseInt(wypXML.item(i).getAttributes().getNamedItem("id").getNodeValue()),new Wyp(Integer.parseInt(wypXML.item(i).getAttributes().getNamedItem("id").getNodeValue()),Integer.parseInt(wypXML.item(i).getAttributes().getNamedItem("id_laptop").getNodeValue()),Integer.parseInt(wypXML.item(i).getAttributes().getNamedItem("id_czlowiek").getNodeValue()),Integer.parseInt(wypXML.item(i).getAttributes().getNamedItem("data_start").getNodeValue()),Integer.parseInt(wypXML.item(i).getAttributes().getNamedItem("data_koniec").getNodeValue())));
     }
 }
-    static public void czytaj(){
+
+    /**
+     * Uruchamiasz odczytanie wszystkich danych z bazy
+     * @param host ip serwera
+     */
+    static public void czytaj(String host){
         try {
-            czytaj(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse("http://"));
+            czytaj(DocumentBuilderFactory.newInstance().newDocumentBuilder().parse("http://"+host+"/xml.php"));
         } catch (SAXException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -49,40 +60,66 @@ public static void czytaj(Document dok){
         }
     }
 
-    private static class Słownik<T, T2> extends Dictionary<T, T2> {
-        @Override
-        public Enumeration<T2> elements() {
-            return null;
-        }
+    /**
+     * Zapisuje zmiany na serwerze
+     * @param host ip serwera
+     */
+    static public void zapisz(String host){
 
-        @Override
-        public T2 get(Object o) {
-            return null;
-        }
+        String daneWysyłane="oddaj=";
+        Wyp[] wyporzyczeniaDoZmiany=new Wyp[wyporzyczenia.size()];
+        for(int i=0;i<wyporzyczenia.size();i++){
+            Wyp el=wyporzyczenia.elements().nextElement();
+            if(el.zmieniony){
+                wyporzyczeniaDoZmiany[i]=el;
+                daneWysyłane+=el.id+"/"+el.czasKoniec+";";
 
-        @Override
-        public boolean isEmpty() {
-            return false;
+            }
         }
+        daneWysyłane+="&dodaj=";
+        Wyp[] wyporzyczeniaDoDodania=new Wyp[wyporzyczenia.size()];
+        for(int i=0;i<wyporzyczenia.size();i++){
+            Wyp el=wyporzyczenia.elements().nextElement();
+            if(el.dodany){
+                wyporzyczeniaDoDodania[i]=el;
+                daneWysyłane+=el.laptop.id+"/"+el.kto.id+"/"+el.czasStart()+"/"+el.czasKoniec()+";";
 
-        @Override
-        public Enumeration<T> keys() {
-            return null;
+            }
         }
+        URL u = null;
+        try {
+            u = new URL("http://"+host+"/zapisz.php");
+            HttpURLConnection con = (HttpURLConnection) u.openConnection();
 
-        @Override
-        public T2 put(T integer, T2 czlowiek) {
-            return null;
-        }
+            //add reuqest header
+            con.setRequestMethod("POST");
+            con.setRequestProperty("User-Agent", "Android");
+            con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 
-        @Override
-        public T2 remove(Object o) {
-            return null;
-        }
 
-        @Override
-        public int size() {
-            return 0;
+            // Send post request
+            con.setDoOutput(true);
+            DataOutputStream wr = new DataOutputStream(con.getOutputStream());
+            wr.writeBytes(daneWysyłane);
+            wr.flush();
+            wr.close();
+
+            int responseCode = con.getResponseCode();
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
+
 }

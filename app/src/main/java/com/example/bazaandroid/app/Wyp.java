@@ -14,8 +14,8 @@ public class Wyp extends ObiektBazy {
     {
         id=_id;
 
-        laptop=Baza.laptopy[_id_laptop];
-        kto=Baza.ludzie[_id_czlowiek];
+        laptop=Baza.laptopy.get(_id_laptop);
+        kto=Baza.ludzie.get(_id_czlowiek);
 
         if(_czasStart==0)
             czasStart=null;
@@ -25,5 +25,17 @@ public class Wyp extends ObiektBazy {
             czasKoniec=null;
         else
             czasKoniec=new Date(_czasKoniec);
+    }
+    public long czasStart()
+    {
+        if(czasStart==null)
+            return 0;
+        return czasStart.getTime();
+    }
+    public long czasKoniec()
+    {
+        if(czasKoniec==null)
+            return 0;
+        return czasKoniec.getTime();
     }
 }
